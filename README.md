@@ -36,40 +36,31 @@ cp .env.example .env
 python bot.py
 ```
 
-### Запуск в Docker
+### Запуск в Docker (Docker Compose)
 
-1. Соберите Docker образ:
+Проект использует `docker-compose` для развертывания всей инфраструктуры (Бот + PostgreSQL + pgAdmin).
+
+1. Убедитесь, что у вас установлены Docker и Docker Compose.
+
+2. Соберите и запустите контейнеры:
 ```bash
-docker build -t telegram-ai-bot .
+docker-compose up -d --build
 ```
 
-2. Запустите контейнер с переменными окружения:
+3. Просмотр статуса контейнеров:
 ```bash
-docker run -d \
-  --name telegram-bot \
-  -e TELEGRAM_BOT_TOKEN=your_telegram_bot_token \
-  -e OPENAI_API_KEY=your_openai_api_key \
-  telegram-ai-bot
+docker-compose ps
 ```
 
-Или используйте файл `.env`:
+4. Просмотр логов:
 ```bash
-docker run -d \
-  --name telegram-bot \
-  --env-file .env \
-  telegram-ai-bot
+docker-compose logs -f bot
 ```
 
-3. Просмотр логов:
-```bash
-docker logs -f telegram-bot
-```
+### Доступ к pgAdmin
 
-4. Остановка контейнера:
-```bash
-docker stop telegram-bot
-docker rm telegram-bot
-```
+После запуска pgAdmin будет доступен по адресу: `http://ваш-ip:5050` (или `http://localhost:5050` при локальном запуске).
+Логин и пароль настраиваются через секреты/переменные окружения `PGADMIN_EMAIL` и `PGADMIN_PASSWORD`.
 
 ## CI/CD с GitHub Actions
 
@@ -94,6 +85,11 @@ docker rm telegram-bot
 - `GHCR_TOKEN` - Personal Access Token (PAT) с правами `read:packages` и `write:packages` для GitHub Container Registry
 - `TELEGRAM_BOT_TOKEN` - Токен Telegram бота
 - `OPENAI_API_KEY` - API ключ для ProxyAPI
+- `DB_NAME` - Имя базы данных
+- `DB_USER` - Пользователь PostgreSQL
+- `DB_PASSWORD` - Пароль PostgreSQL
+- `PGADMIN_EMAIL` - Email для входа в pgAdmin
+- `PGADMIN_PASSWORD` - Пароль для входа в pgAdmin
 
 Подробная инструкция по настройке SSH и развертыванию находится в [.github/workflows/README.md](.github/workflows/README.md).
 
