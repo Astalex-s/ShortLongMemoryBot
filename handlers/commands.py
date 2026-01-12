@@ -5,8 +5,12 @@ import logging
 from telebot import TeleBot
 from utils.messages import Messages
 from utils.memory_manager import memory
+from utils.db_manager import DBManager
 
 logger = logging.getLogger(__name__)
+
+# Инициализируем менеджер БД
+db_manager = DBManager()
 
 
 def register_command_handlers(bot: TeleBot):
@@ -46,10 +50,12 @@ def register_command_handlers(bot: TeleBot):
         user_id = user.id
         logger.info(f"Команда /clear от пользователя ID: {user_id}")
         
-        # Очищаем историю пользователя
+        # Очищаем оперативную память
         memory.clear_history(user_id)
+        # Очищаем базу данных
+        db_manager.clear_all_history(user_id)
         
         bot.reply_to(message, Messages.HISTORY_CLEARED)
         
-        logger.debug(f"История диалога пользователя {user_id} очищена")
+        logger.debug(f"История диалога пользователя {user_id} полностью очищена")
 
