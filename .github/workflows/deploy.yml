@@ -79,51 +79,39 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PORT: ${{ secrets.SSH_PORT || 22 }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT || 5432 }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          REGISTRY: ${{ env.REGISTRY }}
-          IMAGE_FULL_NAME: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.name }}
-          GITHUB_ACTOR: ${{ github.actor }}
+          IMAGE_URL: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.name }}:latest
         run: |
-          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" /bin/bash << 'EOF'
+          # Копируем docker-compose.yml на сервер
+          scp -P "$SSH_PORT" docker-compose.yml "$SSH_USER@$SSH_HOST":~/docker-compose.yml
+          
+          # Запускаем через SSH
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" /bin/bash << EOF
             set -e
             
             # Логин в реестр
-            echo "${{ env.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
             
-            # Имя контейнера и образа
-            CONTAINER_NAME="telegram-ai-bot"
-            IMAGE_URL="${{ env.REGISTRY }}/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]'):latest"
+            # Создаем .env файл для docker-compose
+            cat << EOT > .env
+            IMAGE_URL=${IMAGE_URL}
+            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            PGADMIN_EMAIL=${{ secrets.PGADMIN_EMAIL }}
+            PGADMIN_PASSWORD=${{ secrets.PGADMIN_PASSWORD }}
+            EOT
             
-            echo "🚀 Обновление контейнера $CONTAINER_NAME..."
+            # Останавливаем и удаляем старые контейнеры (если были запущены не через compose)
+            docker stop telegram-ai-bot memorybot_db memorybot_pgadmin || true
+            docker rm telegram-ai-bot memorybot_db memorybot_pgadmin || true
             
-            # Останавливаем старый контейнер, если он есть
-            docker stop $CONTAINER_NAME || true
-            docker rm $CONTAINER_NAME || true
+            # Обновляем и запускаем все контейнеры через docker-compose
+            docker-compose pull
+            docker-compose up -d --remove-orphans
             
-            # Скачиваем новый образ
-            docker pull $IMAGE_URL
-            
-            # Запускаем новый контейнер с PostgreSQL переменными
-            docker run -d \
-              --name $CONTAINER_NAME \
-              --restart unless-stopped \
-              -e TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}" \
-              -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-              -e DB_HOST="${{ secrets.DB_HOST }}" \
-              -e DB_PORT="${{ secrets.DB_PORT || 5432 }}" \
-              -e DB_NAME="${{ secrets.DB_NAME }}" \
-              -e DB_USER="${{ secrets.DB_USER }}" \
-              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-              $IMAGE_URL
-              
             echo "✅ Деплой успешно завершен!"
-            docker ps | grep $CONTAINER_NAME
+            docker-compose ps
           EOF
 
