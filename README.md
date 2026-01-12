@@ -19,13 +19,13 @@ cp .env.example .env
 4. Заполните переменные окружения в файле `.env`:
    - `TELEGRAM_BOT_TOKEN` - токен вашего Telegram бота (получить у [@BotFather](https://t.me/BotFather))
    - `OPENAI_API_KEY` - API ключ для ProxyAPI
-   - `DB_HOST` - хост PostgreSQL (по умолчанию `85.198.96.156`)
-   - `DB_PORT` - порт PostgreSQL (по умолчанию `5432`)
-   - `DB_NAME` - имя базы данных (по умолчанию `memorybot`)
-   - `DB_USER` - пользователь PostgreSQL (по умолчанию `postgres`)
-   - `DB_PASSWORD` - пароль PostgreSQL
+    - `DB_HOST` - хост PostgreSQL (по умолчанию `85.198.103.173`)
+    - `DB_PORT` - порт PostgreSQL (по умолчанию `5432`)
+    - `DB_NAME` - имя базы данных (по умолчанию `memorybot`)
+    - `DB_USER` - пользователь PostgreSQL (по умолчанию `postgres`)
+    - `DB_PASSWORD` - пароль PostgreSQL
 
-5. PostgreSQL база данных будет на сервере `85.198.96.156`. Таблицы создадутся автоматически при первом запуске бота.
+5. PostgreSQL база данных будет на сервере `85.198.103.173`. Таблицы создадутся автоматически при первом запуске бота.
 
 ## Запуск
 
