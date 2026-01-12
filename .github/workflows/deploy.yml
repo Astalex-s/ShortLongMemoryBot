@@ -85,54 +85,54 @@ jobs:
           scp -P "$SSH_PORT" -o StrictHostKeyChecking=no docker-compose.yml "$SSH_USER@$SSH_HOST":~/docker-compose.yml
           
           # Запускаем через SSH
-          # Используем unquoted EOF, чтобы GitHub Actions подставил значения secrets прямо в текст скрипта
-          ssh -p "$SSH_PORT" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" /bin/bash << EOF
-          set -e
-          
-          # Функция для вызова docker-compose (поддержка v1 и v2)
-          docker_compose_cmd() {
-            if command -v docker-compose &> /dev/null; then
-              docker-compose "\$@"
-            else
-              docker compose "\$@"
-            fi
-          }
-          
-          # Логин в реестр
-          echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-          
-          # Создаем .env файл для docker-compose (без отступов для EOT!)
-          cat << EOT > .env
-          IMAGE_URL=${IMAGE_URL}
-          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          DB_NAME=${{ secrets.DB_NAME }}
-          DB_USER=${{ secrets.DB_USER }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          PGADMIN_EMAIL=${{ secrets.PGADMIN_EMAIL }}
-          PGADMIN_PASSWORD=${{ secrets.PGADMIN_PASSWORD }}
-          EOT
-          
-          # Останавливаем старые одиночные контейнеры, если они были
-          docker stop telegram-ai-bot memorybot_db memorybot_pgadmin || true
-          docker rm telegram-ai-bot memorybot_db memorybot_pgadmin || true
-          
-          # Обновляем и запускаем через docker-compose
-          docker_compose_cmd pull
-          docker_compose_cmd up -d --remove-orphans
-          
-          echo "⏳ Ожидание запуска сервисов (15 сек)..."
-          sleep 15
-          
-          echo "📋 Статус контейнеров:"
-          docker_compose_cmd ps
-          
-           echo "📋 Логи бота (последние 50 строк):"
-           docker_compose_cmd logs --tail=50 bot
-           
-           echo "📋 Логи pgAdmin (последние 50 строк):"
-           docker_compose_cmd logs --tail=50 pgadmin
-           
-           echo "✅ Деплой успешно завершен!"
-           EOF
+          # Используем unquoted END_SSH, чтобы GitHub Actions подставил значения secrets прямо в текст скрипта
+          ssh -p "$SSH_PORT" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" "bash -s" << END_SSH
+            set -e
+            
+            # Функция для вызова docker-compose (поддержка v1 и v2)
+            docker_compose_cmd() {
+              if command -v docker-compose &> /dev/null; then
+                docker-compose "\$@"
+              else
+                docker compose "\$@"
+              fi
+            }
+            
+            # Логин в реестр
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            
+            # Создаем .env файл для docker-compose
+            cat << 'EOT' > .env
+            IMAGE_URL=${IMAGE_URL}
+            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            PGADMIN_EMAIL=${{ secrets.PGADMIN_EMAIL }}
+            PGADMIN_PASSWORD=${{ secrets.PGADMIN_PASSWORD }}
+            EOT
+            
+            # Останавливаем старые одиночные контейнеры, если они были
+            docker stop telegram-ai-bot memorybot_db memorybot_pgadmin || true
+            docker rm telegram-ai-bot memorybot_db memorybot_pgadmin || true
+            
+            # Обновляем и запускаем через docker-compose
+            docker_compose_cmd pull
+            docker_compose_cmd up -d --remove-orphans
+            
+            echo "⏳ Ожидание запуска сервисов (15 сек)..."
+            sleep 15
+            
+            echo "📋 Статус контейнеров:"
+            docker_compose_cmd ps
+            
+            echo "📋 Логи бота (последние 50 строк):"
+            docker_compose_cmd logs --tail=50 bot
+            
+            echo "📋 Логи pgAdmin (последние 50 строк):"
+            docker_compose_cmd logs --tail=50 pgadmin
+            
+            echo "✅ Деплой успешно завершен!"
+            END_SSH
 
