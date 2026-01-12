@@ -1,7 +1,7 @@
 # Telegram AI Bot
 
 Telegram бот, который отвечает на вопросы пользователей с помощью AI через ProxyAPI (GPT-4.1-mini).
-
+Ссылка на кейс: https://t.me/portfolio_Alexey_Astafyev/4
 ## Установка
 
 1. Клонируйте репозиторий или скачайте файлы проекта
