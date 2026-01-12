@@ -20,6 +20,7 @@ class DBManager:
             "user": Settings.DB_USER,
             "password": Settings.DB_PASSWORD
         }
+        logger.info(f"Инициализация DBManager с хостом: {Settings.DB_HOST}:{Settings.DB_PORT}, база: {Settings.DB_NAME}")
         self._init_db()
 
     def _get_connection(self):
