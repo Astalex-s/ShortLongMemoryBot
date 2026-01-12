@@ -30,7 +30,7 @@ class Settings:
     MAX_MESSAGES_HISTORY = 10  # Максимальное количество сообщений пользователя в истории
     
     # Настройки PostgreSQL
-    DB_HOST = os.getenv('DB_HOST') or '85.198.96.156'
+    DB_HOST = os.getenv('DB_HOST') or '85.198.103.173'
     DB_PORT = os.getenv('DB_PORT') or '5432'
     DB_NAME = os.getenv('DB_NAME') or 'memorybot'
     DB_USER = os.getenv('DB_USER') or 'postgres'
