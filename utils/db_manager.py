@@ -21,7 +21,24 @@ class DBManager:
             "password": Settings.DB_PASSWORD
         }
         logger.info(f"Инициализация DBManager с хостом: {Settings.DB_HOST}:{Settings.DB_PORT}, база: {Settings.DB_NAME}")
-        self._init_db()
+        
+        # Добавляем повторные попытки подключения при старте
+        import time
+        max_retries = 10
+        connected = False
+        for i in range(max_retries):
+            try:
+                self._init_db()
+                connected = True
+                break
+            except Exception as e:
+                if i == max_retries - 1:
+                    logger.error(f"Не удалось подключиться к БД после {max_retries} попыток: {e}")
+                    # Не выбрасываем исключение здесь, чтобы бот мог попытаться запуститься, 
+                    # но при первом запросе к БД он все равно упадет
+                else:
+                    logger.warning(f"Попытка подключения к БД {i+1}/{max_retries} не удалась. Ожидание 3 сек...")
+                    time.sleep(3)
 
     def _get_connection(self):
         """Создает новое соединение с БД"""
