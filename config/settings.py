@@ -29,6 +29,13 @@ class Settings:
     # Настройки памяти диалогов
     MAX_MESSAGES_HISTORY = 10  # Максимальное количество сообщений пользователя в истории
     
+    # Настройки PostgreSQL
+    DB_HOST = os.getenv('DB_HOST', '85.198.96.156')
+    DB_PORT = os.getenv('DB_PORT', '5432')
+    DB_NAME = os.getenv('DB_NAME', 'memorybot')
+    DB_USER = os.getenv('DB_USER', 'postgres')
+    DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+
     @classmethod
     def validate(cls):
         """
@@ -41,4 +48,6 @@ class Settings:
             raise ValueError("TELEGRAM_BOT_TOKEN не установлен в переменных окружения")
         if not cls.OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY не установлен в переменных окружения")
+        if not cls.DB_HOST or not cls.DB_PASSWORD:
+            raise ValueError("Параметры базы данных не установлены")
 

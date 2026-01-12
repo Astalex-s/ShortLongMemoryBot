@@ -21,13 +21,14 @@ class AIClient:
         )
         self.model = Settings.AI_MODEL
     
-    def get_response(self, user_message: str, history: list = None) -> str:
+    def get_response(self, user_message: str, history: list = None, system_context: str = None) -> str:
         """
         Получает ответ от OpenAI через ProxyAPI
         
         Args:
             user_message: Сообщение пользователя
             history: История предыдущих сообщений в формате [{"role": "user", "content": "..."}, ...]
+            system_context: Долгосрочный контекст (тезисы) для добавления в системный промпт
             
         Returns:
             Ответ от AI модели
@@ -36,6 +37,15 @@ class AIClient:
         
         # Формируем список сообщений для API
         messages = []
+        
+        # Добавляем системный контекст (тезисы), если есть
+        if system_context:
+            messages.append({
+                "role": "system",
+                "content": f"Контекст предыдущих разговоров с пользователем:\n{system_context}"
+            })
+        
+        # Добавляем короткую историю
         if history:
             messages.extend(history)
         
@@ -81,4 +91,67 @@ class AIClient:
                 f"Traceback:\n{error_traceback}"
             )
             raise
+    
+    def generate_theses(self, messages: list) -> str:
+        """
+        Генерирует тезисы из последних сообщений пользователя для долгосрочной памяти
+        
+        Args:
+            messages: Список последних сообщений пользователя
+            
+        Returns:
+            Тезисы в виде текста
+        """
+        if not messages:
+            return ""
+        
+        start_time = time.time()
+        
+        try:
+            # Формируем запрос для генерации тезисов
+            messages_text = "\n".join([f"- {msg}" for msg in messages])
+            prompt = f"""Проанализируй следующие сообщения пользователя и создай краткие тезисы (2-3 предложения), 
+отражающие главные темы, интересы и важную информацию:
+
+{messages_text}
+
+Тезисы должны быть:
+- Краткими и информативными
+- Без лишних деталей
+- Сфокусированными на ключевых моментах
+- В формате списка через точку с запятой
+
+Ответ дай ТОЛЬКО в виде тезисов, без дополнительного текста."""
+
+            logger.debug(f"Генерация тезисов для {len(messages)} сообщений")
+            
+            chat_completion = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            
+            elapsed_time = time.time() - start_time
+            theses = chat_completion.choices[0].message.content
+            
+            logger.info(
+                f"Тезисы сгенерированы за {elapsed_time:.2f}с. "
+                f"Длина: {len(theses)} символов"
+            )
+            logger.debug(f"Сгенерированные тезисы: {theses}")
+            
+            return theses if theses else ""
+            
+        except Exception as e:
+            elapsed_time = time.time() - start_time
+            error_traceback = traceback.format_exc()
+            logger.error(
+                f"Ошибка при генерации тезисов (время выполнения: {elapsed_time:.2f}с): {e}\n"
+                f"Traceback:\n{error_traceback}"
+            )
+            return ""
 

@@ -82,6 +82,11 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT || 5432 }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           REGISTRY: ${{ env.REGISTRY }}
           IMAGE_FULL_NAME: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.name }}
           GITHUB_ACTOR: ${{ github.actor }}
@@ -92,7 +97,7 @@ jobs:
             # Логин в реестр
             echo "${{ env.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
             
-            # Имя контейнера
+            # Имя контейнера и образа
             CONTAINER_NAME="telegram-ai-bot"
             IMAGE_URL="${{ env.REGISTRY }}/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]'):latest"
             
@@ -105,12 +110,17 @@ jobs:
             # Скачиваем новый образ
             docker pull $IMAGE_URL
             
-            # Запускаем новый контейнер
+            # Запускаем новый контейнер с PostgreSQL переменными
             docker run -d \
               --name $CONTAINER_NAME \
               --restart unless-stopped \
               -e TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}" \
               -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
+              -e DB_HOST="${{ secrets.DB_HOST }}" \
+              -e DB_PORT="${{ secrets.DB_PORT || 5432 }}" \
+              -e DB_NAME="${{ secrets.DB_NAME }}" \
+              -e DB_USER="${{ secrets.DB_USER }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
               $IMAGE_URL
               
             echo "✅ Деплой успешно завершен!"
